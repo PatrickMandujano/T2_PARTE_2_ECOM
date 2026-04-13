@@ -3,6 +3,7 @@ package com.cibertec.service;
 import com.cibertec.entity.*;
 import com.cibertec.repository.CustomerRepository;
 import com.cibertec.repository.ProductRepository;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,19 +30,22 @@ class OrderServiceTest {
     @InjectMocks
     private OrderService service;
 
-    private Customer activeCustomer;
+    private static Customer activeCustomer;
+
+    @BeforeAll
+    static void initGlobalData() {
+        activeCustomer = new Customer(1L, true);
+    }
 
     @BeforeEach
     void setUp() {
-        activeCustomer = new Customer(1L, true);
-
         when(customerRepository.findById(1L))
                 .thenReturn(Optional.of(activeCustomer));
     }
 
     @Test
     @DisplayName("La orden es cancelada si no hay stock.")
-    void shouldCancelOrderWhenNoStock() {
+    void shouldCancelOrderWhenProductHasNoStock() {
 
         when(productRepository.findById(1L))
                 .thenReturn(java.util.Optional.of(new Product(1L, 0, 200)));
