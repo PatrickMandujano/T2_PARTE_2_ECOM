@@ -1,9 +1,6 @@
 package com.cibertec.service;
 
-import com.cibertec.entity.Customer;
-import com.cibertec.entity.Order;
-import com.cibertec.entity.OrderItem;
-import com.cibertec.entity.Product;
+import com.cibertec.entity.*;
 import com.cibertec.repository.CustomerRepository;
 import com.cibertec.repository.ProductRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -32,26 +29,44 @@ class OrderServiceTest {
     private OrderService service;
 
     @Test
-    @DisplayName("La orden no procede si no hay stock.")
+    @DisplayName("La orden es cancelada si no hay stock.")
     void shouldCancelOrderWhenNoStock() {
+        when(customerRepository.findById(1L))
+                .thenReturn(java.util.Optional.of(new Customer(1L, true)));
 
-        Customer customer = new Customer(1L, true);
-        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(productRepository.findById(1L))
+                .thenReturn(java.util.Optional.of(new Product(1L, 0, 200)));
 
-        Product product = new Product(1L, 0, 200);
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-
-        Order order = new Order(
+        OrderRequest request = new OrderRequest(
                 "OR-0001",
                 1L,
                 List.of(new OrderItem(1L, 1))
         );
 
-        String result = service.createOrder(order);
+        String result = service.createOrder(request);
 
         assertEquals("Orden cancelada por falta de stock", result);
     }
 
+    @Test
+    @DisplayName("si total > 500 → aplicar descuento")
+    void shouldApplyDiscountWhenTotalGreaterThan500() {
 
+        when(customerRepository.findById(1L))
+                .thenReturn(java.util.Optional.of(new Customer(1L, true)));
+
+        when(productRepository.findById(1L))
+                .thenReturn(java.util.Optional.of(new Product(1L, 10, 300)));
+
+        OrderRequest request = new OrderRequest(
+                "OR-0001",
+                1L,
+                List.of(new OrderItem(1L, 2)) // total = 600
+        );
+
+        String result = service.createOrder(request);
+
+        assertEquals("Orden registrada con descuento aplicado", result);
+    }
 
 }
