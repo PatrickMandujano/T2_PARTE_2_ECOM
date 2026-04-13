@@ -3,6 +3,7 @@ package com.cibertec.service;
 import com.cibertec.entity.*;
 import com.cibertec.repository.CustomerRepository;
 import com.cibertec.repository.ProductRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,11 +29,19 @@ class OrderServiceTest {
     @InjectMocks
     private OrderService service;
 
+    private Customer activeCustomer;
+
+    @BeforeEach
+    void setUp() {
+        activeCustomer = new Customer(1L, true);
+
+        when(customerRepository.findById(1L))
+                .thenReturn(Optional.of(activeCustomer));
+    }
+
     @Test
     @DisplayName("La orden es cancelada si no hay stock.")
     void shouldCancelOrderWhenNoStock() {
-        when(customerRepository.findById(1L))
-                .thenReturn(java.util.Optional.of(new Customer(1L, true)));
 
         when(productRepository.findById(1L))
                 .thenReturn(java.util.Optional.of(new Product(1L, 0, 200)));
@@ -51,9 +60,6 @@ class OrderServiceTest {
     @Test
     @DisplayName("si total > 500 → aplicar descuento")
     void shouldApplyDiscountWhenTotalGreaterThan500() {
-
-        when(customerRepository.findById(1L))
-                .thenReturn(java.util.Optional.of(new Customer(1L, true)));
 
         when(productRepository.findById(1L))
                 .thenReturn(java.util.Optional.of(new Product(1L, 10, 300)));

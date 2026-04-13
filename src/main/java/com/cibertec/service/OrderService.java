@@ -20,31 +20,51 @@ public class OrderService {
 
     public String createOrder(OrderRequest orderRequest) {
 
-        var customer = customerRepository.findById(orderRequest.getCustomerId()).orElse(null);
+        //Validación de código de orden de acuerdo con su formato
+        if (!isValidCode(orderRequest.getCode())) {
+            return "Código de orden inválido";
+        }
 
-        //Validación de cliente existente y activo
-        if (customer == null || !customer.isActive()) {
+        //Búsqueda de cliente por ID y validación de su estado activo
+        var customer = customerRepository.findById(orderRequest.getCustomerId())
+                .filter(Customer::isActive)
+                .orElse(null);
+
+        if (customer == null) {
             return "Cliente inválido";
         }
 
-        //Cancelación de orden por falta de stock y cálculo del total
+        //Validación de productos en la orden, cantidad y stock disponible
         double total = 0;
+        Set<Long> ids = new HashSet<>();
 
         for (OrderItem item : orderRequest.getItems()) {
 
+            if (!ids.add(item.getProductId())) {
+                return "Productos duplicados en la orden";
+            }
+
+            if (item.getQuantity() <= 0) {
+                return "Cantidad inválida";
+            }
+
             var product = productRepository.findById(item.getProductId()).orElse(null);
 
-            if (product.getStock() < item.getQuantity()) {
+            if (product == null || product.getStock() < item.getQuantity()) {
                 return "Orden cancelada por falta de stock";
             }
 
             total += product.getPrice() * item.getQuantity();
+
         }
         //descuento si importe total es mayor a 500
-        if (total > 500) {
-            return "Orden registrada con descuento aplicado";
-        }
+        return total > 500
+                ? "Orden registrada con descuento aplicado"
+                : "Orden registrada correctamente";
 
-        return "Orden registrada correctamente";
+    }
+    //Validación de código de orden con formato específico (ejemplo: OR-1234)
+    private boolean isValidCode(String code) {
+        return code.matches("^OR-\\d{4}$");
     }
 }
